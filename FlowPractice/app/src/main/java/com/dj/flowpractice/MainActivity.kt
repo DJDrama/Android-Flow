@@ -49,6 +49,7 @@ class MainActivity : AppCompatActivity() {
         }
 
 
+        //map, filter, take, takewhile
         button6.setOnClickListener {
             playWithMapSync()
         }
@@ -66,6 +67,20 @@ class MainActivity : AppCompatActivity() {
         }
         button11.setOnClickListener {
             playWithTakeWhile()
+        }
+
+        //zip, combine
+        button12.setOnClickListener {
+            zipNormalExample()
+        }
+        button13.setOnClickListener {
+            zipWhenOneCompletesBeforeAnother()
+        }
+        button14.setOnClickListener {
+            zipWhenOneEmitsAfterSomeDelay()
+        }
+        button15.setOnClickListener {
+            combineWhenOneEmitsAfterSomeDelay()
         }
     }
 
@@ -236,6 +251,60 @@ class MainActivity : AppCompatActivity() {
                     System.currentTimeMillis() - startTime < 10
                 }.collect { num ->
                     println(num)
+                }
+        }
+    }
+
+    //Zip
+    private fun zipNormalExample() {
+        val nums = (1..3).asFlow()
+        val strs = flowOf("one", "two", "three")
+        runBlocking {
+            nums.zip(strs) { a, b -> "$a -> $b" }
+                .collect { value ->
+                    println("$value")
+                }
+        }
+    }
+
+    private fun zipWhenOneCompletesBeforeAnother() {
+        val nums = (1..3).asFlow()
+        val strs = flowOf("one", "two", "three", "four")
+        runBlocking {
+            nums.zip(strs) { a, b -> "$a -> $b" }
+                .collect { value ->
+                    println("$value")
+                }
+        }
+    }
+
+    private fun zipWhenOneEmitsAfterSomeDelay() {
+        val nums = (1..3).asFlow().onEach {
+            delay(300)
+        }
+        val strs = flowOf("one", "two", "three").onEach {
+            delay(400)
+        }
+        runBlocking {
+            nums.zip(strs) { a, b -> "$a -> $b" }
+                .collect { value ->
+                    println("$value")
+                }
+        }
+    }
+
+    //COMBINE
+    private fun combineWhenOneEmitsAfterSomeDelay() {
+        val nums = (1..3).asFlow().onEach {
+            delay(300)
+        }
+        val strs = flowOf("one", "two", "three").onEach {
+            delay(400)
+        }
+        runBlocking {
+            nums.combine(strs) { a, b -> "$a -> $b" }
+                .collect { value ->
+                    println("$value")
                 }
         }
     }
