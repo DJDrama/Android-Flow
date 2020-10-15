@@ -49,6 +49,24 @@ class MainActivity : AppCompatActivity() {
         }
 
 
+        button6.setOnClickListener {
+            playWithMapSync()
+        }
+        button7.setOnClickListener {
+            playWithMapSuspend()
+        }
+        button8.setOnClickListener {
+            playWithFilterSync()
+        }
+        button9.setOnClickListener {
+            playWithFilterSuspend()
+        }
+        button10.setOnClickListener {
+            playWithTake()
+        }
+        button11.setOnClickListener {
+            playWithTakeWhile()
+        }
     }
 
     private suspend fun createFlowChain() {
@@ -59,12 +77,12 @@ class MainActivity : AppCompatActivity() {
                 emit(it)
             }
         }.flowOn(IO)
-                //Collect should be inside coroutinescope or suspend fun
-                //Collect will only be work in scope where collect has been called. So it's Main
-                .collect {
-                    Log.i("Flow", "in collect ${Thread.currentThread().name}")
-                    Log.i("Flow", "$it")
-                }
+            //Collect should be inside coroutinescope or suspend fun
+            //Collect will only be work in scope where collect has been called. So it's Main
+            .collect {
+                Log.i("Flow", "in collect ${Thread.currentThread().name}")
+                Log.i("Flow", "$it")
+            }
     }
 
     private fun setupFixedFlow() {
@@ -135,6 +153,90 @@ class MainActivity : AppCompatActivity() {
             channelFlow.collect { item ->
                 Log.i("Flow", "$item")
             }
+        }
+    }
+
+    private fun playWithMapSync() {
+        runBlocking { //because "collect" should be inside coroutinescope or suspend fun
+            (1..3).asFlow()
+                .map { num ->
+                    performSyncOperations(num)
+                }.collect { response ->
+                    println(response)
+                }
+        }
+    }
+
+    private fun performSyncOperations(num: Int): String {
+        return "response is sync $num"
+    }
+
+    private fun playWithMapSuspend() {
+        runBlocking {
+            (1..3).asFlow()
+                .map { num ->
+                    performRequest(num)
+                }.collect { response ->
+                    println(response)
+                }
+        }
+    }
+
+    private suspend fun performRequest(num: Int): String {
+        delay(300)
+        return "response in suspend $num"
+    }
+
+    private fun playWithFilterSync() {
+        runBlocking {
+            (1..10).asFlow()
+                .filter { num ->
+                    filterOddNumSync(num)
+                }.collect { response ->
+                    println(response)
+                }
+        }
+    }
+
+    private fun filterOddNumSync(num: Int): Boolean {
+        return num % 2 != 0
+    }
+
+    private fun playWithFilterSuspend() {
+        runBlocking {
+            (1..10).asFlow()
+                .filter { num ->
+                    filterOddNumAsLongRunningOperation(num)
+                }.collect { response ->
+                    println(response)
+                }
+        }
+    }
+
+    private suspend fun filterOddNumAsLongRunningOperation(num: Int): Boolean {
+        delay(100)
+        return num % 2 != 0
+    }
+
+    private fun playWithTake() {
+        runBlocking {
+            (1..10).asFlow()
+                .take(4) //size limiting operator (only take first 4 elements)
+                .collect { num ->
+                    println(num)
+                }
+        }
+    }
+
+    private fun playWithTakeWhile() {
+        val startTime = System.currentTimeMillis()
+        runBlocking {
+            (1..1000).asFlow()
+                .takeWhile {//after 10 milli sec it stops
+                    System.currentTimeMillis() - startTime < 10
+                }.collect { num ->
+                    println(num)
+                }
         }
     }
 }
